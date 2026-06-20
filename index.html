@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PneumoSight AI localhost</title>
+    <style>
+      :root {
+        --bg: #f7fafb;
+        --panel: #ffffff;
+        --ink: #15242d;
+        --muted: #5d6f7a;
+        --line: #d5e1e6;
+        --primary: #0f6f6d;
+        --primary-2: #e8f3f4;
+        --ok: #047857;
+        --warn: #b45309;
+        --danger: #b91c1c;
+        --slate: #071019;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--bg);
+        font-family: Inter, Segoe UI, Arial, sans-serif;
+      }
+      a { color: inherit; text-decoration: none; }
+      button, input, textarea, select { font: inherit; }
+      .app { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: auto;
+        border-right: 1px solid var(--line);
+        background: #fff;
+      }
+      .brand { display: flex; gap: 12px; align-items: center; height: 68px; padding: 0 18px; border-bottom: 1px solid var(--line); }
+      .logo { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; color: #fff; background: var(--primary); font-weight: 800; }
+      .brand strong { display: block; }
+      .brand span { color: var(--muted); font-size: 12px; }
+      .nav { padding: 12px; display: grid; gap: 4px; }
+      .nav button {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        text-align: left;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .nav button.active, .nav button:hover { background: var(--primary-2); color: var(--primary); }
+      .topbar {
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 0 28px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255,255,255,.94);
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+      .search { width: min(520px, 42vw); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
+      .content { padding: 28px; max-width: 1280px; margin: 0 auto; width: 100%; }
+      .eyebrow { color: var(--primary); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+      h1 { margin: 8px 0 8px; font-size: clamp(26px, 3vw, 38px); line-height: 1.12; }
+      h2 { margin: 0; font-size: 18px; }
+      p { color: var(--muted); line-height: 1.65; }
+      .header { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+      .grid { display: grid; gap: 18px; }
+      .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .main-side { grid-template-columns: minmax(0, 1fr) 380px; }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 8px 24px rgba(15,23,42,.06);
+      }
+      .card-head { padding: 18px 18px 8px; }
+      .card-body { padding: 18px; }
+      .metric { padding: 16px; }
+      .metric span { color: var(--muted); font-size: 13px; }
+      .metric strong { display: block; margin-top: 8px; font-size: 28px; }
+      .badge { display: inline-flex; align-items: center; border-radius: 7px; padding: 5px 8px; font-size: 12px; font-weight: 700; background: var(--primary-2); color: var(--primary); }
+      .badge.ok { background: #d1fae5; color: var(--ok); }
+      .badge.warn { background: #fef3c7; color: var(--warn); }
+      .badge.danger { background: #fee2e2; color: var(--danger); }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        border: 1px solid var(--primary);
+        border-radius: 8px;
+        padding: 9px 14px;
+        background: var(--primary);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .btn.secondary { background: #fff; color: var(--primary); }
+      .field { display: grid; gap: 8px; }
+      label { font-size: 13px; font-weight: 700; }
+      input, textarea, select { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
+      textarea { min-height: 110px; resize: vertical; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--line); }
+      th { color: var(--muted); font-weight: 700; }
+      .viewer { overflow: hidden; border-radius: 8px; border: 1px solid #1e293b; background: var(--slate); color: #fff; }
+      .viewer-tools { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.12); background: #0f172a; font-size: 12px; color: #cbd5e1; }
+      .viewport { min-height: 380px; aspect-ratio: 4 / 3; display: grid; place-items: center; background: radial-gradient(circle at center, rgba(255,255,255,.07), transparent 45%), #071019; }
+      .viewport img { max-width: 100%; max-height: 100%; object-fit: contain; }
+      .chart { width: 100%; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+      .progress { height: 9px; border-radius: 999px; background: #e5eef2; overflow: hidden; }
+      .progress > i { display: block; height: 100%; background: var(--primary); border-radius: inherit; }
+      .check { display: flex; justify-content: space-between; align-items: center; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+      .public {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background-image:
+          linear-gradient(rgba(15,111,109,.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(15,111,109,.08) 1px, transparent 1px);
+        background-size: 28px 28px;
+      }
+      .public-box { width: min(1080px, 100%); display: grid; grid-template-columns: 1.05fr .95fr; gap: 24px; align-items: center; }
+      .hidden { display: none !important; }
+      @media (max-width: 980px) {
+        .app { grid-template-columns: 1fr; }
+        .sidebar { position: static; height: auto; }
+        .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .topbar { position: static; padding: 0 16px; }
+        .content { padding: 18px; }
+        .cols-2, .cols-3, .cols-4, .main-side, .public-box { grid-template-columns: 1fr; }
+        .search { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="public" class="public">
+      <div class="public-box">
+        <section>
+          <div class="eyebrow" id="publicEyebrow"></div>
+          <h1 id="publicTitle"></h1>
+          <p id="publicText"></p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px">
+            <button class="btn" id="publicNext">Continue</button>
+            <button class="btn secondary" data-screen="dashboard">Open dashboard</button>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-body" id="publicCard"></div>
+        </section>
+      </div>
+    </div>
+
+    <div id="app" class="app hidden">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="logo">PS</div>
+          <div>
+            <strong>PneumoSight AI</strong>
+            <span>localhost hospital demo</span>
+          </div>
+        </div>
+        <nav class="nav" id="nav"></nav>
+      </aside>
+      <section>
+        <div class="topbar">
+          <input class="search" value="Search HN, accession, ward" aria-label="Search" />
+          <span class="badge ok">localhost ready</span>
+        </div>
+        <main class="content">
+          <div class="header">
+            <div>
+              <div class="eyebrow" id="eyebrow"></div>
+              <h1 id="title"></h1>
+              <p id="description"></p>
+            </div>
+            <span class="badge" id="headerBadge"></span>
+          </div>
+          <div id="screen"></div>
+        </main>
+      </section>
+    </div>
+
+    <script>
+      const asset = (name) => `/assets/${name}`;
+      const metrics = {
+        accuracy: .8942,
+        precision: .8785,
+        recall: .9641,
+        specificity: .7778,
+        f1: .9193,
+        rocAuc: .9625,
+        threshold: .5,
+        backbone: "DenseNet121",
+        layer: "conv5_block16_2_conv"
+      };
+      const pct = (n, d = 1) => `${(n * 100).toFixed(d)}%`;
+      const screens = [
+        ["splash", "Splash screen", "Clinical AI", "PneumoSight AI", "Human-in-the-loop pneumonia screening for chest X-rays with Grad-CAM and doctor sign-off."],
+        ["login", "Login", "Secure access", "Login", "Demo hospital sign-in for role-based clinical workflows."],
+        ["role", "Role selection", "Access control", "Select role", "Choose Radiologist, Doctor, X-ray Technician, or Admin."],
+        ["consent", "Consent and disclaimer", "Patient safety", "Consent and disclaimer", "Acknowledge clinical decision-support limits before using AI output."],
+        ["dashboard", "Home dashboard", "Operations", "Home dashboard", "Monitor cases, turnaround time, model status, and high-priority review queue."],
+        ["upload", "Upload X-ray", "Intake", "Upload X-ray", "Attach X-ray image and bind it to accession, HN, ward, and consent metadata."],
+        ["quality", "Image quality check", "Safety gate", "Image quality check", "Check resolution, exposure, contrast, sharpness, and orientation before AI processing."],
+        ["processing", "AI processing", "Inference", "AI processing", "Track preprocessing, DenseNet121 prediction, uncertainty, and Grad-CAM generation."],
+        ["results", "AI result summary", "Decision support", "AI result summary", "Summarize pneumonia probability, threshold, uncertainty, and next clinical action."],
+        ["gradcam", "Grad-CAM viewer", "Explainability", "Grad-CAM viewer", "Review heatmap localization beside the source X-ray with medical viewer controls."],
+        ["threshold", "Threshold setting", "Model policy", "Threshold setting", "Tune sensitivity and specificity trade-offs with a documented clinical rationale."],
+        ["case", "Case detail", "Patient context", "Case detail", "Review identifiers, imaging metadata, quality checks, AI output, and timeline."],
+        ["doctor", "Doctor review", "Human sign-off", "Doctor review page", "Accept, override, or request repeat imaging before report export."],
+        ["report", "Report preview", "Reporting", "Report preview", "Preview the clinician-facing report before it is signed and shared."],
+        ["export", "Export/share report", "Interoperability", "Export and share report", "Send signed reports to PACS/RIS/EHR channels or download PDF/JSON."],
+        ["history", "Case history", "Archive", "Case history", "Search prior studies by accession, HN, status, AI class, reviewer, and export state."],
+        ["analytics", "Analytics dashboard", "Quality monitoring", "Analytics dashboard", "Track validation metrics, class mix, threshold trade-off, and operational throughput."],
+        ["settings", "Admin settings", "Administration", "Admin settings", "Configure users, integrations, retention, consent defaults, and storage."],
+        ["model", "Model version", "Governance", "Model version page", "Inspect the active DenseNet121 package, training metadata, artifacts, and validation charts."],
+        ["audit", "Audit log", "Compliance", "Audit log page", "Review access, upload, prediction, threshold, review, and export events."]
+      ];
+      const appScreens = screens.slice(4);
+      let analyses = [];
+      let lastAnalysis = null;
+      const demoCaseRows = [
+        ["XR-2026-000431", "HN-008214 | Demo Child A", "Pediatric ER", "91%", "AI ready", "High priority"],
+        ["XR-2026-000432", "HN-008219 | Demo Child B", "Pediatric Ward 3", "73%", "Doctor review", "Review"],
+        ["XR-2026-000433", "HN-008226 | Demo Child C", "Outpatient", "18%", "Quality check", "Routine"]
+      ];
+      let current = location.hash.replace("#", "") || "splash";
+
+      function metric(label, value, detail) {
+        return `<div class="card metric"><span>${label}</span><strong>${value}</strong><p>${detail}</p></div>`;
+      }
+      function chart(title, image) {
+        return `<div class="card"><div class="card-head"><h2>${title}</h2></div><div class="card-body"><img class="chart" src="${asset(image)}" alt="${title}"></div></div>`;
+      }
+      function viewer(heatmap = false) {
+        return `<div class="viewer">
+          <div class="viewer-tools"><span>Cornerstone3D/OHIF-ready viewer | WL 410 | WW 1420</span><span>Zoom | Reset | Fullscreen</span></div>
+          <div class="viewport"><img src="${asset(heatmap ? "gradcam_examples.png.png" : "sample_xray_images.png.png")}" alt="medical viewer"></div>
+        </div>`;
+      }
+      function casesTable() {
+        const rows = analyses.length
+          ? analyses.map(item => [
+              item.id,
+              item.filename || "uploaded image",
+              "Local upload",
+              pct(item.probabilityPneumonia || 0, 1),
+              item.predictedClass || "UNKNOWN",
+              item.predictedClass === "PNEUMONIA" ? "Doctor review" : "Routine"
+            ])
+          : demoCaseRows;
+        return `<table><thead><tr><th>Accession</th><th>Patient</th><th>Ward</th><th>AI probability</th><th>Status</th><th>Triage</th></tr></thead><tbody>
+          ${rows.map(r => `<tr>${r.map((c, i) => `<td>${i === 4 ? `<span class="badge">${c}</span>` : i === 5 ? `<span class="badge ${c === "Doctor review" || c === "High priority" ? "warn" : "ok"}">${c}</span>` : c}</td>`).join("")}</tr>`).join("")}
+        </tbody></table>`;
+      }
+      function fields() {
+        return ["Accession no.|XR-2026-000431", "Patient HN|HN-008214", "Patient name|Demo Child A", "Age|3y 8m", "Ward|Pediatric ER", "Study|Chest X-ray AP"]
+          .map(x => { const [l, v] = x.split("|"); return `<div class="field"><label>${l}</label><input value="${v}"></div>`; }).join("");
+      }
+      function resultOrEmpty() {
+        if (!lastAnalysis) {
+          return `<div class="card"><div class="card-body"><h2>No real analysis yet</h2><p>Upload a PNG/JPEG chest X-ray first. This page will show the actual model prediction after /api/analyze finishes.</p><button class="btn" data-screen="upload">Upload X-ray</button></div></div>`;
+        }
+        return "";
+      }
+      function uploadedViewer(useOverlay = false) {
+        if (!lastAnalysis) return resultOrEmpty();
+        const src = useOverlay && lastAnalysis.overlayUrl ? lastAnalysis.overlayUrl : lastAnalysis.originalUrl;
+        const label = useOverlay && lastAnalysis.overlayUrl ? "Real Grad-CAM overlay generated from uploaded image" : "Uploaded image";
+        return `<div class="viewer"><div class="viewer-tools"><span>${label}</span><span>${lastAnalysis.modelVersion || "model"}</span></div><div class="viewport"><img src="${src}" alt="${label}"></div></div>`;
+      }
+      function qualityHtml() {
+        if (!lastAnalysis?.quality) return resultOrEmpty();
+        return lastAnalysis.quality.checks.map(item => `<div class="check"><b>${item.label}</b><span class="badge ${item.passed ? "ok" : "warn"}">${item.value}</span></div>`).join("");
+      }
+      function analysisSummary() {
+        if (!lastAnalysis) return resultOrEmpty();
+        const p = Number(lastAnalysis.probabilityPneumonia || 0);
+        const predicted = lastAnalysis.predictedClass || "UNKNOWN";
+        const triage = predicted === "PNEUMONIA" ? "High priority doctor review" : "Routine doctor review";
+        return `<div class="grid cols-3">${metric("P(Pneumonia)", pct(p, 1), "Model output from uploaded image")}${metric("Prediction", predicted, "Threshold " + Number(lastAnalysis.threshold || .5).toFixed(2))}${metric("Uncertainty", lastAnalysis.uncertaintyLevel || "n/a", "Confidence " + pct(Number(lastAnalysis.confidenceScore || 0), 1))}</div><div class="check"><b>Suggested triage</b><span class="badge ${predicted === "PNEUMONIA" ? "warn" : "ok"}">${triage}</span></div>`;
+      }
+      function renderBody(id) {
+        if (id === "dashboard") return `<div class="grid cols-4">${metric("Open cases","18","5 high priority")}${metric("Median turnaround","11m","Upload to doctor review")}${metric("ROC-AUC",pct(metrics.rocAuc,2),"Validation")}${metric("Sensitivity",pct(metrics.recall),"Threshold 0.50")}</div><br><div class="grid main-side"><div class="card"><div class="card-head"><h2>Review queue</h2><p>Sorted by probability and ward priority.</p></div><div class="card-body">${casesTable()}</div></div><div class="card"><div class="card-head"><h2>Model status</h2></div><div class="card-body"><div class="progress"><i style="width:96%"></i></div><p><b>${metrics.backbone}</b><br>Threshold ${metrics.threshold.toFixed(2)}<br>Grad-CAM ${metrics.layer}</p><button class="btn" data-screen="model">View model</button></div></div></div>`;
+        if (id === "upload") return `<div class="grid main-side"><div class="card"><div class="card-head"><h2>Study metadata</h2><p>These fields are stored with the local case result.</p></div><div class="card-body grid cols-2">${fields()}</div></div><div class="card"><div class="card-head"><h2>Upload real X-ray image</h2><p>PNG or JPEG. The file is sent to /api/analyze and processed by best_model.keras.</p></div><div class="card-body grid"><input id="realFile" type="file" accept="image/png,image/jpeg"><img id="uploadPreview" class="chart hidden" alt="upload preview"><button id="analyzeBtn" class="btn">Analyze uploaded image with real model</button><p id="uploadStatus">No file selected yet.</p></div></div></div>`;
+        if (id === "quality") return `<div class="grid main-side"><div>${uploadedViewer(false)}</div><div class="card"><div class="card-head"><h2>Quality result from uploaded image</h2></div><div class="card-body grid">${qualityHtml()}<button class="btn" data-screen="results">Open AI result</button></div></div></div>`;
+        if (id === "processing") return `<div class="card"><div class="card-head"><h2>Inference pipeline</h2><p>Processing XR-2026-000431.</p></div><div class="card-body grid">${["DICOM/image normalization|100","DenseNet121 preprocessing|100","Pneumonia probability|92","Grad-CAM overlay|76","Audit and report payload|48"].map(x=>{const [a,b]=x.split("|");return `<div><div style="display:flex;justify-content:space-between"><b>${a}</b><span>${b}%</span></div><div class="progress"><i style="width:${b}%"></i></div></div>`}).join("")}<button class="btn" data-screen="results">Open result</button></div></div>`;
+        if (id === "results") return lastAnalysis ? `<div class="grid main-side"><div class="card"><div class="card-head"><h2>Real AI result</h2><p>Result generated from ${lastAnalysis.filename} at ${new Date(lastAnalysis.createdAt).toLocaleString()}.</p></div><div class="card-body grid">${analysisSummary()}<button class="btn" data-screen="gradcam">Open generated Grad-CAM</button></div></div>${uploadedViewer(false)}</div>` : resultOrEmpty();
+        if (id === "gradcam") return lastAnalysis ? `<div class="grid main-side"><div>${uploadedViewer(true)}</div><div class="card"><div class="card-head"><h2>Explainability notes</h2></div><div class="card-body"><p><b>Layer:</b> ${metrics.layer}<br><b>Model:</b> ${lastAnalysis.modelVersion || metrics.backbone}</p><p>${lastAnalysis.overlayUrl ? "This overlay was generated from the uploaded image." : "Grad-CAM could not be generated for this run."}</p>${lastAnalysis.gradcamError ? `<p class="badge warn">${lastAnalysis.gradcamError}</p>` : ""}<button class="btn" data-screen="doctor">Continue review</button></div></div></div>` : resultOrEmpty();
+        if (id === "threshold") return `<div class="grid main-side"><div class="card"><div class="card-head"><h2>Hospital threshold</h2></div><div class="card-body grid"><strong style="font-size:42px">0.50</strong><input type="range" min="10" max="90" value="50"><div class="grid cols-2">${metric("Precision",pct(metrics.precision,0),"Validation")}${metric("Recall",pct(metrics.recall,0),"Sensitivity")}${metric("Specificity",pct(metrics.specificity,0),"Normal class")}${metric("F1",pct(metrics.f1,0),"Balanced")}</div><textarea placeholder="Clinical rationale"></textarea><button class="btn">Save policy</button></div></div>${chart("Threshold trade-off", "threshold_tradeoff.png.png")}</div>`;
+        if (id === "case") return lastAnalysis ? `<div class="grid main-side"><div class="grid"><div class="card"><div class="card-head"><h2>${lastAnalysis.id}</h2><p>${lastAnalysis.filename} | local upload | ${new Date(lastAnalysis.createdAt).toLocaleString()}</p></div><div class="card-body grid cols-4">${metric("AI class",lastAnalysis.predictedClass,pct(lastAnalysis.probabilityPneumonia,1)+" probability")}${metric("Quality",lastAnalysis.quality?.passed ? "Pass" : "Review",Math.round((lastAnalysis.quality?.score || 0)*100)+"% score")}${metric("Status","AI ready","Awaiting doctor")}${metric("Model",lastAnalysis.modelVersion || "DenseNet121","local real run")}</div></div>${uploadedViewer(false)}</div><div class="card"><div class="card-head"><h2>Timeline</h2></div><div class="card-body grid">${["Image uploaded","Quality checked","AI inference completed","Grad-CAM generated","Doctor review pending","Report ready"].map((x,i)=>`<div class="check"><b>${x}</b><span class="badge ${i<4?"ok":""}">${i<4?"done":"pending"}</span></div>`).join("")}</div></div></div>` : resultOrEmpty();
+        if (id === "doctor") return lastAnalysis ? `<div class="grid main-side"><div>${uploadedViewer(true)}</div><div class="card"><div class="card-head"><h2>Clinician decision</h2></div><div class="card-body grid"><div style="display:flex;gap:8px"><button class="btn">Agree</button><button class="btn secondary">Override</button><button class="btn secondary">Repeat</button></div><textarea>AI predicts ${lastAnalysis.predictedClass} with ${pct(lastAnalysis.probabilityPneumonia,1)} pneumonia probability. Review with clinical context.</textarea><textarea placeholder="Recommendation"></textarea><button class="btn" data-screen="report">Sign and preview</button></div></div></div>` : resultOrEmpty();
+        if (id === "report") return lastAnalysis ? `<div class="grid main-side"><div class="card"><div class="card-body"><h2>Pneumonia AI Decision Support Report</h2><p>Accession ${lastAnalysis.id} | Local upload | ${lastAnalysis.filename}</p><hr><div class="grid cols-2"><p><b>AI Summary</b><br>Predicted class: ${lastAnalysis.predictedClass}<br>Probability: ${pct(lastAnalysis.probabilityPneumonia,1)}<br>Threshold: ${Number(lastAnalysis.threshold).toFixed(2)}<br>Uncertainty: ${lastAnalysis.uncertaintyLevel}</p><p><b>Doctor Review</b><br>AI result was generated from the uploaded image. Final review and diagnosis must be completed by a clinician.</p></div><p class="badge warn">AI output is decision support only. Final diagnosis remains clinician responsibility.</p></div></div><div class="card"><div class="card-head"><h2>Report checks</h2></div><div class="card-body grid">${["Image uploaded","AI probability included","Safety note included","Doctor sign-off required"].map(x=>`<div class="check"><b>${x}</b><span class="badge ok">ok</span></div>`).join("")}<button class="btn" data-screen="export">Export report</button></div></div></div>` : resultOrEmpty();
+        if (id === "export") return `<div class="grid cols-2">${["PACS|DICOM SR / encapsulated PDF","RIS|HL7 ORU","EHR|FHIR DiagnosticReport","Download|PDF and JSON"].map(x=>{const [a,b]=x.split("|");return `<div class="card"><div class="card-head"><h2>${a}</h2><p>${b}</p></div><div class="card-body"><span class="badge ok">Ready</span> <button class="btn secondary">Send</button></div></div>`}).join("")}</div>`;
+        if (id === "history") return `<div class="card"><div class="card-head"><h2>Search history</h2></div><div class="card-body grid"><div class="grid cols-4"><input placeholder="HN or accession"><input placeholder="Ward"><input placeholder="Status"><button class="btn secondary">Search</button></div>${casesTable()}</div></div>`;
+        if (id === "analytics") return `<div class="grid"><div class="grid cols-4">${metric("Accuracy",pct(metrics.accuracy),"Test split")}${metric("Precision",pct(metrics.precision),"PPV")}${metric("Sensitivity",pct(metrics.recall),"Recall")}${metric("Specificity",pct(metrics.specificity),"Normal recall")}</div><div class="grid cols-2">${chart("Evaluation curves","evaluation_curves.png.png")}${chart("Training curves","training_curves.png.png")}${chart("Class distribution","class_distribution.png.png")}${chart("Threshold tradeoff","threshold_tradeoff.png.png")}</div></div>`;
+        if (id === "settings") return `<div class="grid cols-2"><div class="card"><div class="card-head"><h2>Hospital policy</h2></div><div class="card-body grid">${fields()}<div class="check"><b>Require consent</b><span class="badge ok">Enabled</span></div></div></div><div class="card"><div class="card-head"><h2>Integrations</h2></div><div class="card-body grid">${["PostgreSQL","S3/MinIO","PACS DICOMweb","FHIR endpoint","Hospital SSO"].map(x=>`<div class="check"><b>${x}</b><span class="badge">Configured</span></div>`).join("")}</div></div></div>`;
+        if (id === "model") return `<div class="grid main-side"><div class="card"><div class="card-head"><h2>Active model</h2></div><div class="card-body grid">${["Backbone|DenseNet121","Input size|224x224","Positive class|PNEUMONIA","Threshold|0.50","ROC-AUC|96.25%","Grad-CAM layer|conv5_block16_2_conv"].map(x=>{const[a,b]=x.split("|");return `<div class="check"><b>${a}</b><span>${b}</span></div>`}).join("")}<p class="badge warn">Decision-support only. Not a standalone diagnostic device.</p></div></div><div class="grid">${chart("Training curves","training_curves.png.png")}${chart("Grad-CAM examples","gradcam_examples.png.png")}</div></div>`;
+        if (id === "audit") return `<div class="card"><div class="card-head"><h2>Audit events</h2></div><div class="card-body"><table><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Entity</th><th>IP</th></tr></thead><tbody>${[["08:40","tech@hospital.local","xray.uploaded","XR-2026-000431","10.14.4.21"],["08:41","api","ai.predicted","XR-2026-000431","10.14.4.21"],["08:39","doctor@hospital.local","doctor.reviewed","XR-2026-000432","10.14.4.33"],["Yesterday","admin@hospital.local","threshold.updated","hospital","10.14.1.8"]].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div></div>`;
+        return "";
+      }
+      function publicCard(id) {
+        if (id === "login") return `<div class="grid"><div class="field"><label>Email</label><input value="doctor@hospital.local"></div><div class="field"><label>Password</label><input type="password" value="demo-password"></div><button class="btn" data-screen="role">Sign in</button></div>`;
+        if (id === "role") return `<div class="grid">${["Radiologist","Doctor","X-ray Technician","Admin"].map((r,i)=>`<button class="btn ${i===1?"":"secondary"}" data-screen="consent">${r}</button>`).join("")}</div>`;
+        if (id === "consent") return `<div class="grid"><p class="badge warn">AI output supports clinical judgement. It does not replace a licensed clinician.</p><label><input type="checkbox" checked> Consent and audit logging acknowledged</label><button class="btn" data-screen="dashboard">Continue to dashboard</button></div>`;
+        return `<div class="grid"><img class="chart" src="${asset("gradcam_examples.png.png")}" alt="Grad-CAM examples"><div class="grid cols-3">${metric("ROC-AUC",pct(metrics.rocAuc,2),"Validation")}${metric("Recall",pct(metrics.recall),"Sensitivity")}${metric("F1",pct(metrics.f1),"Threshold 0.50")}</div></div>`;
+      }
+      async function loadCases() {
+        try {
+          const response = await fetch("/api/cases");
+          const payload = await response.json();
+          analyses = payload.cases || [];
+          if (!lastAnalysis && analyses.length) lastAnalysis = analyses[0];
+        } catch {
+          analyses = [];
+        }
+      }
+      function bindUploadHandlers() {
+        const fileInput = document.getElementById("realFile");
+        const preview = document.getElementById("uploadPreview");
+        const button = document.getElementById("analyzeBtn");
+        const status = document.getElementById("uploadStatus");
+        if (!fileInput || !button || !status) return;
+
+        fileInput.onchange = () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) {
+            status.textContent = "No file selected yet.";
+            preview?.classList.add("hidden");
+            return;
+          }
+          status.textContent = `Selected: ${file.name}`;
+          if (preview) {
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove("hidden");
+          }
+        };
+
+        button.onclick = async () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) {
+            status.textContent = "Please choose a PNG/JPEG X-ray image first.";
+            return;
+          }
+          const formData = new FormData();
+          formData.append("image", file);
+          button.disabled = true;
+          status.textContent = "Uploading and running real model inference. This can take 30-120 seconds on first load.";
+          setScreen("processing");
+          try {
+            const response = await fetch("/api/analyze", { method: "POST", body: formData });
+            const payload = await response.json();
+            if (!response.ok || !payload.ok) {
+              throw new Error(payload.error || "Analysis failed.");
+            }
+            lastAnalysis = payload.result;
+            analyses.unshift(payload.result);
+            setScreen("results");
+          } catch (error) {
+            setScreen("upload");
+            const newStatus = document.getElementById("uploadStatus");
+            if (newStatus) newStatus.innerHTML = `<span class="badge danger">Real analysis failed</span><br>${error.message}<br>Run <b>setup-real-ai.cmd</b> once, then start again with <b>start-real-ai-localhost.cmd</b>.`;
+          } finally {
+            const newButton = document.getElementById("analyzeBtn");
+            if (newButton) newButton.disabled = false;
+          }
+        };
+      }
+      function setScreen(id) {
+        current = id;
+        location.hash = id;
+        const meta = screens.find(s => s[0] === id) || screens[0];
+        const publicIds = ["splash", "login", "role", "consent"];
+        document.getElementById("public").classList.toggle("hidden", !publicIds.includes(id));
+        document.getElementById("app").classList.toggle("hidden", publicIds.includes(id));
+        if (publicIds.includes(id)) {
+          document.getElementById("publicEyebrow").textContent = meta[2];
+          document.getElementById("publicTitle").textContent = meta[3];
+          document.getElementById("publicText").textContent = meta[4];
+          document.getElementById("publicCard").innerHTML = publicCard(id);
+          document.getElementById("publicNext").dataset.screen = id === "splash" ? "login" : id === "login" ? "role" : id === "role" ? "consent" : "dashboard";
+        } else {
+          document.getElementById("eyebrow").textContent = meta[2];
+          document.getElementById("title").textContent = meta[3];
+          document.getElementById("description").textContent = meta[4];
+          document.getElementById("headerBadge").textContent = "local demo";
+          document.getElementById("screen").innerHTML = renderBody(id);
+        }
+        document.querySelectorAll("[data-screen]").forEach(el => el.onclick = () => setScreen(el.dataset.screen));
+        document.querySelectorAll(".nav button").forEach(btn => btn.classList.toggle("active", btn.dataset.screen === id));
+        if (id === "upload") bindUploadHandlers();
+      }
+      async function init() {
+        await loadCases();
+        document.getElementById("nav").innerHTML = appScreens.map(s => `<button data-screen="${s[0]}">${s[1]}</button>`).join("");
+        setScreen(current);
+      }
+      window.addEventListener("hashchange", () => setScreen(location.hash.replace("#", "") || "splash"));
+      init();
+    </script>
+  </body>
+</html>
